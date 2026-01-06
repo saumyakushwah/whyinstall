@@ -3,20 +3,21 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { analyzePackage } from './analyzer';
-import { formatOutput } from './formatter';
+import { formatOutput, formatSizeMap } from './formatter';
 import { detectPackageManager } from './packageManager';
+import { analyzeSizeMap } from './sizeMapAnalyzer';
 
 const program = new Command();
 
 program
   .name('whyinstall')
   .description('Find why a dependency exists in your JS/TS project')
-  .version('0.2.0')
+  .version('0.3.0')
   .argument('<package-name>', 'Package name to analyze')
   .option('-j, --json', 'Output as JSON')
   .option('-c, --cwd <path>', 'Working directory', process.cwd())
-  .option('--impact', 'Show impact analysis for removing this dependency')
-  .action((packageName: string, options: { json?: boolean; cwd?: string; impact?: boolean }) => {
+  .option('-s, --size-map', 'Show bundle size impact breakdown')
+  .action((packageName: string, options: { json?: boolean; cwd?: string; sizeMap?: boolean }) => {
     try {
       const cwd = options.cwd || process.cwd();
       const pm = detectPackageManager(cwd);
@@ -25,9 +26,15 @@ program
         console.log(`\n${chalk.gray(`Detected package manager: ${pm}`)}\n`);
       }
       
-      const result = analyzePackage(packageName, cwd, options.impact);
-      const output = formatOutput(result, options.json, options.impact);
-      console.log(output);
+      if (options.sizeMap) {
+        const result = analyzeSizeMap(packageName, cwd);
+        const output = formatSizeMap(result, options.json);
+        console.log(output);
+      } else {
+        const result = analyzePackage(packageName, cwd);
+        const output = formatOutput(result, options.json);
+        console.log(output);
+      }
       
       process.exit(0);
     } catch (error) {

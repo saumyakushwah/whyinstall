@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { AnalyzeResult, DependencyPath } from './types';
+import { AnalyzeResult, DependencyPath, SizeMapResult } from './types';
 
 function formatSize(bytes: number | undefined): string {
   if (!bytes) return '';
@@ -55,25 +55,7 @@ function getTypeLabel(type: DependencyPath['type']): string {
   return labels[type] || type;
 }
 
-function getRiskEmoji(risk: 'Low' | 'Medium' | 'High'): string {
-  const emojis = {
-    Low: '🟢',
-    Medium: '🟡',
-    High: '🔴'
-  };
-  return emojis[risk] || '⚪';
-}
-
-function getRiskColor(risk: 'Low' | 'Medium' | 'High'): (text: string) => string {
-  const colors = {
-    Low: chalk.green,
-    Medium: chalk.yellow,
-    High: chalk.red
-  };
-  return colors[risk] || chalk.gray;
-}
-
-export function formatOutput(result: AnalyzeResult, json: boolean = false, showImpact: boolean = false): string {
+export function formatOutput(result: AnalyzeResult, json: boolean = false): string {
   if (json) {
     return JSON.stringify(result, null, 2);
   }
@@ -111,43 +93,6 @@ export function formatOutput(result: AnalyzeResult, json: boolean = false, showI
     });
   }
   
-  if (showImpact && pkg.impact) {
-    const impact = pkg.impact;
-    output += '\n' + chalk.bold('Impact analysis:') + '\n\n';
-    
-    if (impact.files.length > 0) {
-      output += chalk.bold('Used in ') + chalk.bold(`${impact.files.length} file${impact.files.length !== 1 ? 's' : ''}:`) + '\n\n';
-      
-      impact.files.forEach((file, index) => {
-        const fileUsage = file as any;
-        const lineRange = fileUsage.lines.length === 1 
-          ? `Line ${fileUsage.lines[0]}`
-          : `Lines ${Math.min(...fileUsage.lines)}–${Math.max(...fileUsage.lines)}`;
-        
-        output += `${index + 1}. ${chalk.blue(fileUsage.file)}\n`;
-        output += `   ${chalk.gray(lineRange)}\n`;
-        if (fileUsage.purpose) {
-          output += `   ${chalk.dim(`Purpose: ${fileUsage.purpose}`)}\n`;
-        }
-        if (fileUsage.methods.length > 0) {
-          output += `   ${chalk.dim(`Methods: ${fileUsage.methods.slice(0, 5).join(', ')}${fileUsage.methods.length > 5 ? '...' : ''}`)}\n`;
-        }
-        output += '\n';
-      });
-    } else {
-      output += chalk.yellow('  No direct usage found in source files\n\n');
-    }
-    
-    output += chalk.bold('Estimated removal impact:') + '\n';
-    impact.impacts.forEach((impactText) => {
-      output += `  ${chalk.gray('-')} ${chalk.gray(impactText)}\n`;
-    });
-    
-    output += '\n';
-    const riskColor = getRiskColor(impact.riskLevel);
-    output += chalk.bold('Risk level: ') + getRiskEmoji(impact.riskLevel) + ' ' + riskColor(impact.riskLevel) + '\n';
-  }
-  
   if (suggestions.length > 0) {
     output += '\n' + chalk.bold('Suggested actions:') + '\n';
     suggestions.forEach((suggestion, index) => {
@@ -155,5 +100,27 @@ export function formatOutput(result: AnalyzeResult, json: boolean = false, showI
     });
   }
   
+  return output;
+}
+
+export function formatSizeMap(result: SizeMapResult, json: boolean = false): string {
+  if (json) {
+    return JSON.stringify(result, null, 2);
+  }
+
+  let output = '';
+  output += chalk.bold.cyan(`Size map for: ${result.packageName}\n\n`);
+  output += chalk.bold(`${result.packageName} total impact: `) + chalk.green(formatSize(result.totalSize)) + '\n\n';
+  output += chalk.bold('Breakdown:\n');
+
+  for (const item of result.breakdown) {
+    const sizeStr = formatSize(item.size);
+    output += chalk.gray('- ') + chalk.white(item.name) + chalk.gray(': ') + chalk.yellow(sizeStr) + '\n';
+  }
+
+  if (result.percentOfNodeModules !== undefined && result.percentOfNodeModules > 0) {
+    output += '\n' + chalk.dim(`This package contributes ${result.percentOfNodeModules.toFixed(1)}% of your vendor bundle.\n`);
+  }
+
   return output;
 }

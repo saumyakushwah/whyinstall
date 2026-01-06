@@ -4,20 +4,6 @@ export interface DependencyPath {
   packageJsonPath?: string;
 }
 
-export interface FileUsage {
-  file: string;
-  lines: number[];
-  methods: string[];
-  context?: string[];
-  purpose?: string;
-}
-
-export interface ImpactAnalysis {
-  files: FileUsage[];
-  riskLevel: 'Low' | 'Medium' | 'High';
-  impacts: string[];
-}
-
 export interface PackageInfo {
   name: string;
   version: string;
@@ -25,7 +11,6 @@ export interface PackageInfo {
   size?: number;
   paths: DependencyPath[];
   sourceFiles?: string[];
-  impact?: ImpactAnalysis;
 }
 
 export interface AnalyzeResult {
@@ -34,3 +19,16 @@ export interface AnalyzeResult {
 }
 
 export type PackageManager = 'npm' | 'yarn' | 'pnpm';
+
+export interface SizeBreakdown {
+  name: string;
+  size: number;
+}
+
+export interface SizeMapResult {
+  packageName: string;
+  totalSize: number;
+  breakdown: SizeBreakdown[];
+  nodeModulesSize?: number;
+  percentOfNodeModules?: number;
+}
