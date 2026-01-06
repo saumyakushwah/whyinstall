@@ -1,6 +1,6 @@
 {
   "name": "whyinstall",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "CLI tool to find why a dependency exists in your JS/TS project",
   "main": "dist/index.js",
   "bin": {

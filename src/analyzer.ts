@@ -3,6 +3,7 @@ import { join, dirname } from 'path';
 import { PackageInfo, DependencyPath, AnalyzeResult } from './types';
 import { detectPackageManager } from './packageManager';
 import { findFilesUsingPackage } from './fileFinder';
+import { analyzeImpact } from './impactAnalyzer';
 
 interface PackageJson {
   name?: string;
@@ -191,7 +192,7 @@ function formatSize(bytes: number | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-export function analyzePackage(packageName: string, cwd: string = process.cwd()): AnalyzeResult {
+export function analyzePackage(packageName: string, cwd: string = process.cwd(), includeImpact: boolean = false): AnalyzeResult {
   const rootPackageJson = join(cwd, 'package.json');
   const packageJsonPath = findPackageJsonPath(packageName, cwd);
   if (!packageJsonPath) {
@@ -241,6 +242,11 @@ export function analyzePackage(packageName: string, cwd: string = process.cwd())
   
   const sourceFiles = findFilesUsingPackage(packageName, cwd);
   
+  let impact;
+  if (includeImpact) {
+    impact = analyzeImpact(packageName, cwd);
+  }
+  
   return {
     package: {
       name: packageName,
@@ -248,7 +254,8 @@ export function analyzePackage(packageName: string, cwd: string = process.cwd())
       description,
       size,
       paths,
-      sourceFiles: sourceFiles.length > 0 ? sourceFiles : undefined
+      sourceFiles: sourceFiles.length > 0 ? sourceFiles : undefined,
+      impact
     },
     suggestions
   };

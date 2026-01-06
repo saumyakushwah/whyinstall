@@ -11,11 +11,12 @@ const program = new Command();
 program
   .name('whyinstall')
   .description('Find why a dependency exists in your JS/TS project')
-  .version('0.1.1')
+  .version('0.2.0')
   .argument('<package-name>', 'Package name to analyze')
   .option('-j, --json', 'Output as JSON')
   .option('-c, --cwd <path>', 'Working directory', process.cwd())
-  .action((packageName: string, options: { json?: boolean; cwd?: string }) => {
+  .option('--impact', 'Show impact analysis for removing this dependency')
+  .action((packageName: string, options: { json?: boolean; cwd?: string; impact?: boolean }) => {
     try {
       const cwd = options.cwd || process.cwd();
       const pm = detectPackageManager(cwd);
@@ -24,8 +25,8 @@ program
         console.log(`\n${chalk.gray(`Detected package manager: ${pm}`)}\n`);
       }
       
-      const result = analyzePackage(packageName, cwd);
-      const output = formatOutput(result, options.json);
+      const result = analyzePackage(packageName, cwd, options.impact);
+      const output = formatOutput(result, options.json, options.impact);
       console.log(output);
       
       process.exit(0);

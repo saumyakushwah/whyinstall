@@ -4,6 +4,20 @@ export interface DependencyPath {
   packageJsonPath?: string;
 }
 
+export interface FileUsage {
+  file: string;
+  lines: number[];
+  methods: string[];
+  context?: string[];
+  purpose?: string;
+}
+
+export interface ImpactAnalysis {
+  files: FileUsage[];
+  riskLevel: 'Low' | 'Medium' | 'High';
+  impacts: string[];
+}
+
 export interface PackageInfo {
   name: string;
   version: string;
@@ -11,6 +25,7 @@ export interface PackageInfo {
   size?: number;
   paths: DependencyPath[];
   sourceFiles?: string[];
+  impact?: ImpactAnalysis;
 }
 
 export interface AnalyzeResult {
