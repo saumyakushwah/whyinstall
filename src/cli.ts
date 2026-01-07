@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name('whyinstall')
   .description('Find why a dependency exists in your JS/TS project')
-  .version('0.3.1')
+  .version('0.3.2')
   .argument('<package-name>', 'Package name to analyze')
   .option('-j, --json', 'Output as JSON')
   .option('-c, --cwd <path>', 'Working directory', process.cwd())
