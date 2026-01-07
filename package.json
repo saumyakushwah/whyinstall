@@ -1,6 +1,6 @@
 {
   "name": "whyinstall",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "CLI tool to find why a dependency exists in your JS/TS project",
   "main": "dist/index.js",
   "bin": {
@@ -21,6 +21,11 @@
   ],
   "author": "Saumya Kushwah",
   "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^11.1.0"

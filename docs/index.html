@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>whyinstall - Find why any dependency exists in your project</title>
+  <meta name="description" content="CLI tool to find why a dependency exists in your JS/TS project. Works with npm, yarn, and pnpm.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --bg-secondary: #111113;
+      --bg-tertiary: #18181b;
+      --text: #fafafa;
+      --text-muted: #71717a;
+      --accent: #22d3ee;
+      --accent-dim: #0e7490;
+      --green: #4ade80;
+      --yellow: #facc15;
+      --pink: #f472b6;
+      --orange: #fb923c;
+      --border: #27272a;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Gradient background */
+    .bg-gradient {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(244, 114, 182, 0.1), transparent),
+        radial-gradient(ellipse 50% 30% at 0% 100%, rgba(74, 222, 128, 0.08), transparent);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    nav {
+      display: flex;
+      gap: 24px;
+    }
+
+    nav a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    nav a:hover {
+      color: var(--text);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 100px 0 80px;
+      text-align: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h1 .highlight {
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 550px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border);
+    }
+
+    /* Terminal */
+    .terminal-wrapper {
+      margin: 80px auto 0;
+      max-width: 700px;
+    }
+
+    .terminal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 
+        0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 20px 50px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot.red { background: #ef4444; }
+    .terminal-dot.yellow { background: #eab308; }
+    .terminal-dot.green { background: #22c55e; }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .terminal-body {
+      padding: 20px 20px 20px 0;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+      height: 420px;
+      overflow: hidden;
+    }
+
+    .terminal-line {
+      opacity: 0;
+      animation: fadeIn 0.3s forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    .prompt {
+      color: var(--green);
+    }
+
+    .command {
+      color: var(--text);
+    }
+
+    .output-muted {
+      color: var(--text-muted);
+    }
+
+    .output-accent {
+      color: var(--accent);
+    }
+
+    .output-yellow {
+      color: var(--yellow);
+    }
+
+    .output-pink {
+      color: var(--pink);
+    }
+
+    .output-green {
+      color: var(--green);
+    }
+
+    .output-orange {
+      color: var(--orange);
+    }
+
+    /* Features */
+    .features {
+      padding: 100px 0;
+    }
+
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 48px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      padding: 28px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent-dim);
+      transform: translateY(-4px);
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-tertiary);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 1.25rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Install */
+    .install {
+      padding: 80px 0;
+      text-align: center;
+    }
+
+    .install-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 24px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+    }
+
+    .install-box code {
+      color: var(--accent);
+    }
+
+    .copy-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      color: var(--text);
+      background: var(--border);
+    }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    footer p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hero {
+        padding: 60px 0 40px;
+      }
+
+      .terminal-body {
+        font-size: 0.75rem;
+        padding: 16px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+
+  <header>
+    <div class="container">
+      <a href="/" class="logo">why<span>install</span></a>
+      <nav>
+        <a href="https://github.com/saumyakushwah/whyinstall" target="_blank">GitHub</a>
+        <a href="https://www.npmjs.com/package/whyinstall" target="_blank">npm</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="badge">
+          <span class="badge-dot"></span>
+          Works with npm, yarn & pnpm
+        </div>
+        <h1>Find why any dependency<br><span class="highlight">exists in your project</span></h1>
+        <p class="subtitle">Trace dependency chains, discover which files use a package, and get actionable insights to optimize your bundle.</p>
+        <div class="cta-group">
+          <a href="https://www.npmjs.com/package/whyinstall" class="btn btn-primary" target="_blank">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Get Started
+          </a>
+          <a href="https://github.com/saumyakushwah/whyinstall" class="btn btn-secondary" target="_blank">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+            View on GitHub
+          </a>
+        </div>
+
+        <div class="terminal-wrapper">
+          <div class="terminal">
+            <div class="terminal-header">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+              <span class="terminal-title">~/my-project</span>
+            </div>
+            <div class="terminal-body" id="terminal">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="container">
+        <p class="section-label">Features</p>
+        <h2>Everything you need to understand your dependencies</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>Dependency Chains</h3>
+            <p>See exactly how any package ended up in your node_modules, whether direct or transitive.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📁</div>
+            <h3>File Usage Detection</h3>
+            <p>Find which source files actually import and use a specific package in your codebase.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Size Impact Analysis</h3>
+            <p>See how much disk space a package and all its dependencies consume with --size-map.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💡</div>
+            <h3>Actionable Suggestions</h3>
+            <p>Get recommendations on whether a package can be removed or optimized.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🎨</div>
+            <h3>Beautiful Output</h3>
+            <p>Color-coded tree view makes it easy to understand complex dependency relationships.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔧</div>
+            <h3>CI/CD Ready</h3>
+            <p>JSON output mode for easy integration with your build pipelines and automation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="install">
+      <div class="container">
+        <p class="section-label">Installation</p>
+        <h2>Get started in seconds</h2>
+        <div class="install-box">
+          <code>npx whyinstall &lt;package-name&gt;</code>
+          <button class="copy-btn" onclick="copyCommand()">Copy</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Built by <a href="https://github.com/saumyakushwah" target="_blank">Saumya Kushwah</a> · MIT License</p>
+    </div>
+  </footer>
+
+  <script>
+    const terminalLines = [
+      { text: '<span class="prompt">$</span> <span class="command">whyinstall chalk</span>', delay: 0 },
+      { text: '', delay: 400 },
+      { text: '<span class="output-muted">Detected package manager: npm</span>', delay: 600 },
+      { text: '', delay: 800 },
+      { text: '<span class="output-accent">chalk</span> <span class="output-muted">v5.3.0 (43 KB)</span>', delay: 1000 },
+      { text: '  <span class="output-muted">Terminal string styling done right</span>', delay: 1200 },
+      { text: '', delay: 1400 },
+      { text: '  <span class="output-yellow">installed via 1 path</span>', delay: 1600 },
+      { text: '', delay: 1800 },
+      { text: '<span class="output-green">1. prod</span>', delay: 2000 },
+      { text: '   my-project', delay: 2200 },
+      { text: '   <span class="output-muted">└─></span> <span class="output-accent">chalk</span>', delay: 2400 },
+      { text: '', delay: 2600 },
+      { text: '<span class="output-pink">Used in (2):</span>', delay: 2800 },
+      { text: '  <span class="output-muted">src/cli.ts</span>', delay: 3000 },
+      { text: '  <span class="output-muted">src/formatter.ts</span>', delay: 3200 },
+    ];
+
+    const terminal = document.getElementById('terminal');
+    
+    function runTerminal() {
+      terminal.innerHTML = '';
+      terminalLines.forEach((line, index) => {
+        setTimeout(() => {
+          const div = document.createElement('div');
+          div.className = 'terminal-line';
+          div.innerHTML = line.text || '&nbsp;';
+          div.style.animationDelay = '0s';
+          terminal.appendChild(div);
+        }, line.delay);
+      });
+    }
+
+    runTerminal();
+    setInterval(runTerminal, 8000);
+
+    function copyCommand() {
+      navigator.clipboard.writeText('npx whyinstall <package-name>');
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    }
+  </script>
+</body>
+</html>
+
