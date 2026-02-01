@@ -1,6 +1,6 @@
 {
   "name": "whyinstall",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "CLI tool to find why a dependency exists in your JS/TS project",
   "main": "dist/index.js",
   "bin": {
@@ -23,9 +23,9 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saumyakushwah/whyinstall.git"
+    "url": "git+https://github.com/saumyakushwah/whyinstall.git"
   },
-  "homepage": "https://saumyakushwah.github.io/whyinstall",
+  "homepage": "https://whyinstall.saumyakushwah.com/",
   "files": [
     "dist",
     "README.md",

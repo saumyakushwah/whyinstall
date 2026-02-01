@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name('whyinstall')
   .description('Find why a dependency exists in your JS/TS project')
-  .version('0.3.2')
+  .version('0.3.3')
   .argument('<package-name>', 'Package name to analyze')
   .option('-j, --json', 'Output as JSON')
   .option('-c, --cwd <path>', 'Working directory', process.cwd())
@@ -21,11 +21,11 @@ program
     try {
       const cwd = options.cwd || process.cwd();
       const pm = detectPackageManager(cwd);
-      
+
       if (!options.json) {
         console.log(`\n${chalk.gray(`Detected package manager: ${pm}`)}\n`);
       }
-      
+
       if (options.sizeMap) {
         const result = analyzeSizeMap(packageName, cwd);
         const output = formatSizeMap(result, options.json);
@@ -35,7 +35,7 @@ program
         const output = formatOutput(result, options.json);
         console.log(output);
       }
-      
+
       process.exit(0);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
